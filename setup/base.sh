@@ -11,9 +11,11 @@ OVERWRITE_STANDARDS=false
 OVERWRITE_CONFIG=false
 CLAUDE_CODE=false
 CURSOR=false
+CODEX=false
 
 # Base URL for raw GitHub content
-BASE_URL="https://raw.githubusercontent.com/buildermethods/agent-os/main"
+# Updated to use AssetOverflow/agent-os with Codex support
+BASE_URL="https://raw.githubusercontent.com/AssetOverflow/agent-os/main"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -38,6 +40,10 @@ while [[ $# -gt 0 ]]; do
             CURSOR=true
             shift
             ;;
+        --codex|--openai-codex)
+            CODEX=true
+            shift
+            ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -47,6 +53,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --overwrite-config          Overwrite existing config.yml"
             echo "  --claude-code               Add Claude Code support"
             echo "  --cursor                    Add Cursor support"
+            echo "  --codex                     Add OpenAI Codex support"
             echo "  -h, --help                  Show this help message"
             echo ""
             exit 0
@@ -137,6 +144,70 @@ if [ "$CURSOR" = true ]; then
     fi
 fi
 
+# Handle Codex installation
+if [ "$CODEX" = true ]; then
+    echo ""
+    echo "📥 Downloading OpenAI Codex integration files..."
+    mkdir -p "$INSTALL_DIR/codex/config"
+    mkdir -p "$INSTALL_DIR/codex/agents"
+    mkdir -p "$INSTALL_DIR/codex/adapters/instructions"
+    mkdir -p "$INSTALL_DIR/codex/tools"
+    mkdir -p "$INSTALL_DIR/codex/setup"
+
+    # Download Codex configuration files
+    echo "  📂 Codex configuration:"
+    download_file "${BASE_URL}/codex/config/codex-config.toml" \
+        "$INSTALL_DIR/codex/config/codex-config.toml" \
+        "false" \
+        "codex/config/codex-config.toml"
+
+    # Download Codex agents
+    echo "  📂 Codex agents:"
+    download_file "${BASE_URL}/codex/agents/task-executor.md" \
+        "$INSTALL_DIR/codex/agents/task-executor.md" \
+        "false" \
+        "codex/agents/task-executor.md"
+
+    # Download Codex adapters
+    echo "  📂 Codex workflow adapters:"
+    download_file "${BASE_URL}/codex/adapters/instructions/execute-task-codex.md" \
+        "$INSTALL_DIR/codex/adapters/instructions/execute-task-codex.md" \
+        "false" \
+        "codex/adapters/instructions/execute-task-codex.md"
+    
+    download_file "${BASE_URL}/codex/adapters/workflow-adapter.md" \
+        "$INSTALL_DIR/codex/adapters/workflow-adapter.md" \
+        "false" \
+        "codex/adapters/workflow-adapter.md"
+
+    # Download Codex tools
+    echo "  📂 Codex MCP tools:"
+    download_file "${BASE_URL}/codex/tools/rube-mcp-adapter.js" \
+        "$INSTALL_DIR/codex/tools/rube-mcp-adapter.js" \
+        "false" \
+        "codex/tools/rube-mcp-adapter.js"
+    chmod +x "$INSTALL_DIR/codex/tools/rube-mcp-adapter.js"
+
+    # Download Codex setup files
+    echo "  📂 Codex setup scripts:"
+    download_file "${BASE_URL}/codex/setup/install-codex.md" \
+        "$INSTALL_DIR/codex/setup/install-codex.md" \
+        "false" \
+        "codex/setup/install-codex.md"
+
+    # Download main integration documentation
+    download_file "${BASE_URL}/CODEX_INTEGRATION.md" \
+        "$INSTALL_DIR/CODEX_INTEGRATION.md" \
+        "false" \
+        "CODEX_INTEGRATION.md"
+
+    # Update config to enable codex
+    if [ -f "$INSTALL_DIR/config.yml" ]; then
+        sed -i.bak '/codex:/,/enabled:/ s/enabled: false/enabled: true/' "$INSTALL_DIR/config.yml" && rm "$INSTALL_DIR/config.yml.bak"
+        echo "  ✓ Codex enabled in configuration"
+    fi
+fi
+
 # Success message
 echo ""
 echo "✅ Agent OS base installation has been completed."
@@ -162,6 +233,11 @@ echo "   $INSTALL_DIR/setup/project.sh   - Project installation script"
 
 if [ "$CLAUDE_CODE" = true ]; then
     echo "   $INSTALL_DIR/claude-code/agents/ - Claude Code agent templates"
+fi
+
+if [ "$CODEX" = true ]; then
+    echo "   $INSTALL_DIR/codex/              - OpenAI Codex integration files"
+    echo "   $INSTALL_DIR/CODEX_INTEGRATION.md - Codex setup and usage guide"
 fi
 
 echo ""

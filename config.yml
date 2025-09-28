@@ -10,6 +10,9 @@ agents:
     enabled: false
   cursor:
     enabled: false
+  codex:
+    enabled: false
+    config_file: ./codex/config/codex-config.toml
 
 project_types:
   default:

@@ -1,0 +1,51 @@
+# OpenAI Codex Configuration for Agent OS
+# This configuration adapts Agent OS workflows for Codex's execution model
+
+[agent]
+name = "agent-os-codex"
+model = "gpt-4o"  # or latest available model
+temperature = 0.1
+max_tokens = 4000
+
+# MCP Servers - stdio transport only for Codex compatibility
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "."]
+
+[mcp_servers.git]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-git"]
+
+[mcp_servers.sqlite]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sqlite"]
+
+# Rube MCP for extended toolkit support (requires adapter for stdio)
+[mcp_servers.rube]
+command = "node"
+args = ["./codex/tools/rube-mcp-adapter.js"]
+
+# Agent OS specific configurations
+[agent_os]
+version = "1.4.1"
+mode = "codex"
+instructions_path = "./instructions"
+standards_path = "./standards"
+codex_adapters_path = "./codex/adapters"
+
+# Codex-specific settings
+[codex]
+# Enable parallel task execution
+parallel_execution = true
+# Maximum concurrent tasks
+max_concurrent_tasks = 3
+# Use simplified instruction format
+simplified_instructions = true
+# Enable cloud sandbox mode
+cloud_sandbox = false  # Set to true for cloud-based execution
+
+# Project type mappings for Codex
+[project_types.default.codex]
+instructions = "./codex/adapters/instructions"
+standards = "./standards"
+agents = "./codex/agents"

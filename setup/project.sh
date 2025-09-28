@@ -11,6 +11,7 @@ OVERWRITE_INSTRUCTIONS=false
 OVERWRITE_STANDARDS=false
 CLAUDE_CODE=false
 CURSOR=false
+CODEX=false
 PROJECT_TYPE=""
 
 # Parse command line arguments
@@ -36,6 +37,10 @@ while [[ $# -gt 0 ]]; do
             CURSOR=true
             shift
             ;;
+        --codex|--openai-codex)
+            CODEX=true
+            shift
+            ;;
         --project-type=*)
             PROJECT_TYPE="${1#*=}"
             shift
@@ -49,6 +54,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --overwrite-standards       Overwrite existing standards files"
             echo "  --claude-code               Add Claude Code support"
             echo "  --cursor                    Add Cursor support"
+            echo "  --codex                     Add OpenAI Codex support"
             echo "  --project-type=TYPE         Use specific project type for installation"
             echo "  -h, --help                  Show this help message"
             echo ""
@@ -80,7 +86,7 @@ if [ "$NO_BASE" = true ]; then
     IS_FROM_BASE=false
     echo "📦 Installing directly from GitHub (no base installation)"
     # Set BASE_URL for GitHub downloads
-    BASE_URL="https://raw.githubusercontent.com/buildermethods/agent-os/main"
+    BASE_URL="https://raw.githubusercontent.com/AssetOverflow/agent-os/main"
     # Download and source functions when running from GitHub
     TEMP_FUNCTIONS="/tmp/agent-os-functions-$$.sh"
     curl -sSL "${BASE_URL}/setup/functions.sh" -o "$TEMP_FUNCTIONS"
@@ -268,6 +274,83 @@ if [ "$CURSOR" = true ]; then
     fi
 fi
 
+# Handle Codex installation for project
+if [ "$CODEX" = true ]; then
+    echo ""
+    echo "📥 Installing OpenAI Codex support..."
+    mkdir -p "./.agent-os/codex"
+
+    if [ "$IS_FROM_BASE" = true ]; then
+        # Copy Codex files from base installation
+        echo "  📂 Copying Codex integration files from base installation..."
+        if [ -d "$BASE_AGENT_OS/codex" ]; then
+            cp -r "$BASE_AGENT_OS/codex/"* "./.agent-os/codex/"
+            echo "  ✓ Codex files copied to project"
+        else
+            echo "  ⚠️  Warning: Codex files not found in base installation"
+            echo "  💡 Run base installation with --codex flag first"
+        fi
+        
+        # Copy Codex integration documentation
+        if [ -f "$BASE_AGENT_OS/CODEX_INTEGRATION.md" ]; then
+            copy_file "$BASE_AGENT_OS/CODEX_INTEGRATION.md" "./CODEX_INTEGRATION.md" "false" "CODEX_INTEGRATION.md"
+        fi
+    else
+        # Download Codex files from GitHub when using --no-base
+        echo "  📂 Downloading Codex integration files from GitHub..."
+        
+        # Create directory structure
+        mkdir -p "./.agent-os/codex/config"
+        mkdir -p "./.agent-os/codex/agents"
+        mkdir -p "./.agent-os/codex/adapters/instructions"
+        mkdir -p "./.agent-os/codex/tools"
+        mkdir -p "./.agent-os/codex/setup"
+        
+        # Download Codex files
+        download_file "${BASE_URL}/codex/config/codex-config.toml" \
+            "./.agent-os/codex/config/codex-config.toml" \
+            "false" \
+            "codex/config/codex-config.toml"
+            
+        download_file "${BASE_URL}/codex/agents/task-executor.md" \
+            "./.agent-os/codex/agents/task-executor.md" \
+            "false" \
+            "codex/agents/task-executor.md"
+            
+        download_file "${BASE_URL}/codex/adapters/instructions/execute-task-codex.md" \
+            "./.agent-os/codex/adapters/instructions/execute-task-codex.md" \
+            "false" \
+            "codex/adapters/instructions/execute-task-codex.md"
+            
+        download_file "${BASE_URL}/codex/adapters/workflow-adapter.md" \
+            "./.agent-os/codex/adapters/workflow-adapter.md" \
+            "false" \
+            "codex/adapters/workflow-adapter.md"
+            
+        download_file "${BASE_URL}/codex/tools/rube-mcp-adapter.js" \
+            "./.agent-os/codex/tools/rube-mcp-adapter.js" \
+            "false" \
+            "codex/tools/rube-mcp-adapter.js"
+        chmod +x "./.agent-os/codex/tools/rube-mcp-adapter.js"
+        
+        download_file "${BASE_URL}/codex/setup/install-codex.md" \
+            "./.agent-os/codex/setup/install-codex.md" \
+            "false" \
+            "codex/setup/install-codex.md"
+            
+        download_file "${BASE_URL}/CODEX_INTEGRATION.md" \
+            "./CODEX_INTEGRATION.md" \
+            "false" \
+            "CODEX_INTEGRATION.md"
+    fi
+    
+    # Copy the Codex configuration to project root for easy access
+    if [ -f "./.agent-os/codex/config/codex-config.toml" ]; then
+        copy_file "./.agent-os/codex/config/codex-config.toml" "./codex-config.toml" "false" "codex-config.toml"
+        echo "  ✓ Codex configuration copied to project root (codex-config.toml)"
+    fi
+fi
+
 # Success message
 echo ""
 echo "✅ Agent OS has been installed in your project ($PROJECT_NAME)!"
@@ -283,6 +366,12 @@ fi
 
 if [ "$CURSOR" = true ]; then
     echo "   .cursor/rules/             - Cursor command rules"
+fi
+
+if [ "$CODEX" = true ]; then
+    echo "   .agent-os/codex/           - OpenAI Codex integration files"
+    echo "   codex-config.toml          - Codex configuration"
+    echo "   CODEX_INTEGRATION.md       - Codex setup and usage guide"
 fi
 
 echo ""
@@ -306,6 +395,17 @@ if [ "$CURSOR" = true ]; then
     echo "  @analyze-product - Set up the mission and roadmap for an existing product"
     echo "  @create-spec     - Create a spec for a new feature"
     echo "  @execute-tasks   - Build and ship code for a new feature"
+    echo ""
+fi
+
+if [ "$CODEX" = true ]; then
+    echo "OpenAI Codex usage:"
+    echo "  1. Install Codex CLI: npm install -g @openai/codex-cli"
+    echo "  2. Set API key: export OPENAI_API_KEY=\"your-key\""
+    echo "  3. Initialize: codex init --config ./codex-config.toml"
+    echo "  4. Run tasks: codex run \"Execute the login task using Agent OS workflows\""
+    echo ""
+    echo "  See CODEX_INTEGRATION.md for detailed setup and usage instructions"
     echo ""
 fi
 
