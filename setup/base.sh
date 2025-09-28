@@ -71,11 +71,11 @@ echo "🚀 Agent OS Base Installation"
 echo "============================="
 echo ""
 
-# Set installation directory to current directory
-CURRENT_DIR=$(pwd)
-INSTALL_DIR="$CURRENT_DIR/.agent-os"
+# Set installation directory to home directory (standard base installation location)
+HOME_DIR="$HOME"
+INSTALL_DIR="$HOME_DIR/.agent-os"
 
-echo "📍 The Agent OS base installation will be installed in the current directory ($CURRENT_DIR)"
+echo "📍 The Agent OS base installation will be installed in your home directory ($HOME_DIR)"
 echo ""
 
 echo "📁 Creating base directories..."
@@ -246,6 +246,7 @@ echo ""
 echo "Next steps:"
 echo ""
 echo "1. Customize your standards in $INSTALL_DIR/standards/"
+echo "   (These will be your defaults for all projects)"
 echo ""
 echo "2. Configure project types in $INSTALL_DIR/config.yml"
 echo ""
